@@ -1,0 +1,35 @@
+services:
+  - type: web
+    name: devops          # Change to your app name
+    env: php  # PHP environment so composer is available
+    plan: free                  # Choose your plan here
+    branch: main                # Branch to deploy (adjust if needed)
+    buildCommand: |
+      composer install --no-interaction --prefer-dist --optimize-autoloader
+      npm install
+      npm run build
+    startCommand: php artisan serve --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: APP_KEY
+        value: base64:Bq3m9Ai2T9ljgN3bKgM8aaC+bodQdzYrova6JYqgNYQ=      # Generate via `php artisan key:generate --show`
+      - key: APP_DEBUG
+        value: "false"
+      - key: APP_URL
+        value: https://itp-devops.onrender.com  # Replace with your Render URL
+      - key: DB_CONNECTION
+        value: pgsql                    # or pgsql or your DB driver
+      - key: DB_HOST
+        value: dpg-d0vcm1h5pdvs738bvr5g-a
+      - key: DB_PORT
+        value: "5432"                  # adjust if needed
+      - key: DB_DATABASE
+        value: taskiteasydb_gtm2
+      - key: DB_USERNAME
+        value: taskiteasydb_gtm2_user
+      - key: DB_PASSWORD
+        value: gFzfZNcb6GejKo9tI7zLQO0LlxRAsPOS
+      # Add other environment variables your app needs here
+
+
