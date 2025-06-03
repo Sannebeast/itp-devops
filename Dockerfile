@@ -25,4 +25,5 @@ RUN chown -R www-data:www-data storage bootstrap/cache
 EXPOSE 8000
 
 # Start Laravel server
-CMD ["php", "-S", "0.0.0.0:8000", "-t", "public"]
+CMD ["sh", "-c", "php artisan migrate --force && php -S 0.0.0.0:8000 -t public"]
+
