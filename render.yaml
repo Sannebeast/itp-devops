@@ -4,6 +4,11 @@ services:
     env: php               # Use Render's built-in PHP environment
     plan: free
     branch: main
+    buildCommand: |
+      composer install --no-interaction --prefer-dist --optimize-autoloader
+      npm install
+      npm run build
+    startCommand: php artisan serve --host=0.0.0.0 --port $PORT
     envVars:
       - key: APP_ENV
         value: production
