@@ -1,14 +1,10 @@
 services:
   - type: web
     name: devops          # Change to your app name
-    env: php  # PHP environment so composer is available
+    env: docker  # PHP environment so composer is available
     plan: free                  # Choose your plan here
     branch: main                # Branch to deploy (adjust if needed)
-    buildCommand: |
-      composer install --no-interaction --prefer-dist --optimize-autoloader
-      npm install
-      npm run build
-    startCommand: php artisan serve --host 0.0.0.0 --port $PORT
+    dockerfilePath: Dockerfile
     envVars:
       - key: APP_ENV
         value: production
