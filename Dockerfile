@@ -1,23 +1,22 @@
-# ---------- Stage 1: Build frontend assets ----------Add commentMore actions
-FROM node:18 AS frontend
+# Stage 1: Build assets with NodeAdd commentMore actions
+FROM node:18 as frontend
 
 WORKDIR /app
 
-# Copy everything needed for Vite build
+# Copy only frontend files for caching
 COPY package*.json ./
-COPY vite.config.* ./
-COPY resources/ ./resources/
-COPY public/ ./public/
-COPY .env .env
-
-# Install dependencies and build Vite assets
 RUN npm install
+
+# Copy the rest of the frontend files and build
+COPY resources/ ./resources/
+COPY vite.config.* ./
 RUN npm run build
 
-# ---------- Stage 2: Laravel with PHP + Composer ----------
+
+# Stage 2: Laravel with PHP and Composer
 FROM php:8.2-fpm
 
-# Install required PHP extensions and system dependencies
+# Install system dependencies and PHP extensions
 RUN apt-get update && apt-get install -y \
     git curl zip unzip libonig-dev libxml2-dev libzip-dev libpq-dev \
     && docker-php-ext-install pdo pdo_mysql pdo_pgsql zip
@@ -25,23 +24,23 @@ RUN apt-get update && apt-get install -y \
 # Install Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# Set working directory for Laravel
+# Set working directory
 WORKDIR /var/www
 
-# Copy Laravel application code
+# Copy application source
 COPY . .
 
-# Copy built Vite assets from frontend stage
+# Copy built assets from frontend
 COPY --from=frontend /app/public/build ./public/build
 
 # Install PHP dependencies
 RUN composer install --no-interaction --optimize-autoloader
 
-# Set correct permissions
+# Set permissions for Laravel
 RUN chown -R www-data:www-data storage bootstrap/cache public/build
 
-# Expose Laravel dev server port
+# Expose port
 EXPOSE 8000
 
-# Run migrations and start Laravel development server
+# Run migrations and start Laravel server
 CMD ["sh", "-c", "php artisan migrate --force && php artisan serve --host=0.0.0.0 --port=8000"]
