@@ -1,7 +1,7 @@
 # Use official PHP 8.2 image with FPM
 FROM php:8.2-fpm
 
-# Install system dependencies
+# Install system dependencies and PHP extensions needed for Laravel
 RUN apt-get update && apt-get install -y \
     git \
     curl \
@@ -24,23 +24,25 @@ RUN apt-get update && apt-get install -y \
         zip \
     && apt-get clean
 
-# Install Composer globally
-RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+# Install Composer globally (safe version)
+RUN curl -sS https://getcomposer.org/installer -o composer-setup.php \
+    && php composer-setup.php --install-dir=/usr/local/bin --filename=composer \
+    && rm composer-setup.php
 
 # Set working directory
 WORKDIR /var/www/html
 
-# Copy app files
+# Copy application files
 COPY . .
 
 # Install PHP dependencies
 RUN composer install --no-interaction --prefer-dist --optimize-autoloader
 
-# Build frontend assets
+# Install Node.js dependencies and build assets
 RUN npm install && npm run build
 
-# Expose port
+# Expose port (Render will map this automatically)
 EXPOSE 8000
 
-# Run Laravel server
+# Run Laravel's built-in development server
 CMD php artisan serve --host=0.0.0.0 --port=${PORT:-8000}
