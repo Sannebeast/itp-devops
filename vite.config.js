@@ -13,6 +13,7 @@ export default defineConfig({
         }),
     ],
     build: {
-        outDir: 'public/build',      // ✅ Laravel expects this
+        outDir: 'public/build',
+        manifest: true,
     },
 });

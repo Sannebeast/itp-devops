@@ -1,4 +1,4 @@
-# ---------- Stage 1: Build frontend assets ----------
+# ---------- Stage 1: Build frontend assets ----------Add commentMore actions
 FROM node:18 AS frontend
 
 WORKDIR /app
