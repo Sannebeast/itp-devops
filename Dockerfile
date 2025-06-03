@@ -23,8 +23,10 @@ COPY . .
 RUN composer install --no-interaction --optimize-autoloader
 
 # Install Node dependencies and build assets
-RUN npm install
-RUN npm run build
+RUN npm install && npm run build
+
+# Debug: List built assets (remove after confirming)
+RUN ls -la public/build
 
 # Set permissions for Laravel
 RUN chown -R www-data:www-data storage bootstrap/cache public/build
