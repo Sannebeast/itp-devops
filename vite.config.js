@@ -14,7 +14,5 @@ export default defineConfig({
     ],
     build: {
         outDir: 'public/build',      // ✅ Laravel expects this
-        manifest: true,              // ✅ Required for Laravel to link assets
-        emptyOutDir: true,           // Optional: clean build dir before building
     },
 });
