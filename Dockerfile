@@ -1,18 +1,28 @@
-# Use official PHP 8.1 image with FPM
-FROM php:8.1-fpm
+# Use official PHP 8.2 image with FPM
+FROM php:8.2-fpm
 
-# Install system dependencies and PHP extensions needed for Laravel
+# Install system dependencies
 RUN apt-get update && apt-get install -y \
     git \
     curl \
     unzip \
     libzip-dev \
-    zip \
     libpq-dev \
-    npm
-
-# Install PHP extensions (pdo_pgsql for PostgreSQL, zip, etc)
-RUN docker-php-ext-install pdo_pgsql zip
+    zip \
+    npm \
+    libonig-dev \
+    libxml2-dev \
+    && docker-php-ext-install \
+        pdo \
+        pdo_pgsql \
+        bcmath \
+        ctype \
+        fileinfo \
+        mbstring \
+        tokenizer \
+        xml \
+        zip \
+    && apt-get clean
 
 # Install Composer globally
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
@@ -20,18 +30,17 @@ RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local
 # Set working directory
 WORKDIR /var/www/html
 
-# Copy existing application files
+# Copy app files
 COPY . .
 
 # Install PHP dependencies
 RUN composer install --no-interaction --prefer-dist --optimize-autoloader
 
-# Install Node dependencies and build assets
+# Build frontend assets
 RUN npm install && npm run build
 
-# Expose port (Render will map this)
+# Expose port
 EXPOSE 8000
 
-# Run Laravel's built-in PHP server
+# Run Laravel server
 CMD php artisan serve --host=0.0.0.0 --port=${PORT:-8000}
-
