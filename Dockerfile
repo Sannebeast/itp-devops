@@ -1,46 +1,50 @@
-# Stage 1: Build assets with NodeAdd commentMore actions
-FROM node:18 as frontend
+FROM php:8.3-apache
 
-WORKDIR /app
-
-# Copy only frontend files for caching
-COPY package*.json ./
-RUN npm install
-
-# Copy the rest of the frontend files and build
-COPY resources/ ./resources/
-COPY vite.config.* ./
-RUN npm run build
-
-
-# Stage 2: Laravel with PHP and Composer
-FROM php:8.2-fpm
-
-# Install system dependencies and PHP extensions
+# Install system packages
 RUN apt-get update && apt-get install -y \
-    git curl zip unzip libonig-dev libxml2-dev libzip-dev libpq-dev \
-    && docker-php-ext-install pdo pdo_mysql pdo_pgsql zip
+    libzip-dev unzip git curl gnupg2 \
+    # IMPORTANT CHANGE: Install libpq-dev for PostgreSQL, and then pdo_pgsql extension
+    libpq-dev \
+    && docker-php-ext-install pdo zip \
+    # Add pdo_pgsql instead of pdo_mysql or alongside it if you need both
+    && docker-php-ext-install pdo_pgsql \
+    && apt-get clean
 
 # Install Composer
-COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
 
-# Set working directory
-WORKDIR /var/www
+# Install Node.js (18.x)
+RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - && \
+    apt-get install -y nodejs
+WORKDIR /var/www/
 
-# Copy application source
+# Copy minimum files for composer install, including app/
+COPY composer.json composer.lock ./
+COPY artisan ./
+COPY bootstrap/ ./bootstrap/
+COPY config/ ./config/
+COPY routes/ ./routes/
+COPY app/ ./app/
+COPY resources/ ./resources/
+COPY vite.config.js ./
+COPY public/ ./public/
+# Install PHP dependencies
+RUN composer install --no-dev --optimize-autoloader
+
+# Copy the rest of the project
 COPY . .
 
-# Copy built assets from frontend
-COPY --from=frontend /app/public/build ./public/build
+# Build frontend assets
+RUN npm ci && npm run build
 
-# Install PHP dependencies
-RUN composer install --no-interaction --optimize-autoloader
+# Configure Apache
+COPY laravel.conf /etc/apache2/sites-available/000-default.conf
+RUN a2enmod rewrite
 
-# Set permissions for Laravel
-RUN chown -R www-data:www-data storage bootstrap/cache public/build
+# Set correct permissions
+RUN chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache
 
 # Expose port
-EXPOSE 8000
+EXPOSE 80
 
-# Run migrations and start Laravel server
 CMD ["sh", "-c", "php artisan migrate:fresh --seed --force && php artisan serve --host=0.0.0.0 --port=8000"]
